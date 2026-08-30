@@ -4,7 +4,7 @@ import pandas as pd
 
 # --- KONFIGURASI HALAMAN & TEMA ---
 st.set_page_config(
-    page_title="AgroResonance AI - Enterprise Formulator", 
+    page_title="AgroResonance AI - Advanced Formulator", 
     page_icon="🌾", 
     layout="wide"
 )
@@ -62,40 +62,47 @@ engine = AgroResonanceEngine()
 
 # --- 2. TAMPILAN ANTARMUKA (FRONTEND DASHBOARD) ---
 st.sidebar.title("🌿 AgroResonance AI")
-st.sidebar.markdown("*Multi-Pesticide R&D Suite*")
+st.sidebar.markdown("*Advanced Agro-Formulation Suite*")
 menu = st.sidebar.radio("Pilih Modul Analisis", ["Thermal-Stable Lock Analysis", "Controlled-Release Optimizer"])
 
 st.sidebar.markdown("---")
-st.sidebar.info("💡 **Panduan:** Pilih kategori pestisida (Insektisida, Fungisida, Akarisida, Herbisida) untuk menyesuaikan parameter fasa molekul.")
+st.sidebar.info("💡 **Info R&D:** Mendukung formulasi pestisida lengkap (Insektisida, Fungisida, Akarisida, Herbisida) serta varian nutrisi (POC, Tepung, Trace Elements).")
 
 if menu == "Thermal-Stable Lock Analysis":
     st.title("🔬 Thermal-Stable Lock Analysis")
-    st.markdown("Evaluasi tingkat ketahanan ikatan molekul pestisida terhadap degradasi suhu dan panas matahari berdasarkan jenis formulasi.")
+    st.markdown("Evaluasi tingkat ketahanan ikatan molekul pestisida dan kompleks nutrisi terhadap degradasi suhu dan panas matahari.")
     st.markdown("---")
     
-    # Pemilihan Kategori Pestisida
-    pesticide_category = st.selectbox(
-        "Pilih Kategori Pestisida",
+    # Pemilihan Kategori Luas (Pestisida & Nutrisi)
+    formulation_type = st.selectbox(
+        "Pilih Kategori Produk / Bahan Aktif",
         [
-            "Insektisida (Contoh: Fipronil / Imidacloprid)",
-            "Fungisida (Contoh: Difenokonazol / Mancozeb)",
-            "Akarisida (Contoh: Abamectin / Hexythiazox)",
-            "Herbisida (Contoh: Glifosat / Paraquat)"
+            "Insektisida (Kontak / Sistemik)",
+            "Fungisida (Protektan / Kuratif)",
+            "Akarisida (Pengendali Tungau)",
+            "Herbisida Pra-Tumbuh (Pencegah Biji Gulma)",
+            "Herbisida Purna-Tumbuh Kontak (Pembakar Daun)",
+            "Herbisida Purna-Tumbuh Sistemik (Mati Sampai Akar)",
+            "Herbisida Selektif (Aman Tanaman Utama)",
+            "Herbisida Non-Selektif (Spektrum Luas / Total)",
+            "Pupuk Cair Organik (POC)",
+            "Pupuk Tepung / Bubuk Larut Air",
+            "Trace Elements / Unsur Hara Mikro (TE)"
         ]
     )
     
     col1, col2 = st.columns(2)
     with col1:
-        phase_a = st.number_input("Nilai Fasa Bahan Aktif Utama (A)", value=1.618, format="%.3f")
+        phase_a = st.number_input("Nilai Fasa Bahan Utama / Unsur (A)", value=1.618, format="%.3f")
     with col2:
-        phase_b = st.number_input("Nilai Fasa Aditif / Pelarut (B)", value=1.625, format="%.3f")
+        phase_b = st.number_input("Nilai Fasa Aditif / Carrier / Pelarut (B)", value=1.625, format="%.3f")
         
     st.markdown("")
     if st.button("Jalankan Simulasi Kestabilan"):
         result = engine.evaluate_thermal_stability(phase_a, phase_b)
         
         st.markdown("---")
-        st.subheader(f"📊 Hasil Analisis Lab: {pesticide_category.split(' ')[0]}")
+        st.subheader(f"📊 Hasil Analisis Lab: {formulation_type}")
         
         m1, m2, m3 = st.columns(3)
         m1.metric(label="Skor Kestabilan Formula", value=f"{result['stability_score']}%")
@@ -104,37 +111,37 @@ if menu == "Thermal-Stable Lock Analysis":
         
         st.markdown("")
         if result['thermal_stable_lock']:
-            st.success("✅ **Formula Optimal:** Ikatan molekul tahan terhadap disipasi panas termal di lapangan.")
+            st.success("✅ **Formula Optimal:** Ikatan molekul/nutrisi tahan terhadap disipasi panas termal di lapangan.")
         else:
-            st.warning("⚠️ **Perhatian:** Deviasi fasa melewati batas toleransi. Disarankan menyesuaikan komposisi aditif.")
+            st.warning("⚠️ **Perhatian:** Deviasi fasa melewati batas toleransi. Disarankan menyesuaikan komposisi aditif atau chelating agent.")
 
 elif menu == "Controlled-Release Optimizer":
     st.title("⏳ Controlled-Release Optimizer")
-    st.markdown("Simulasi kurva pelepasan zat aktif untuk formulasi sistemik, kontak, atau pra-tumbuh di dalam tanah/tanaman.")
+    st.markdown("Simulasi kurva peluruhan dan pelepasan zat aktif pestisida (cair/granul) serta pelepasan lambat pupuk/Trace Elements di tanah.")
     st.markdown("---")
     
-    pesticide_category = st.selectbox(
-        "Pilih Kategori Target Aplikasi",
+    target_category = st.selectbox(
+        "Pilih Target Profil Pelepasan",
         [
-            "Herbisida (Pra-Tumbuh / Lahan Sela)",
-            "Insektisida Granul / Akar",
-            "Fungisida Sistemik Jangka Panjang",
-            "Akarisida Lepas-Terkendali"
+            "Herbisida Pra-Tumbuh (Granul / Suspensi Tanah)",
+            "Herbisida Purna-Tumbuh Sistemik (Penetrasi Daun-Akar)",
+            "Insektisida / Fungisida Granul (Slow-Release Tanah)",
+            "Pupuk / Trace Elements (TE) Lepas-Terkendali (Controlled-Release Fertilizer)"
         ]
     )
     
     col1, col2 = st.columns(2)
     with col1:
-        target_days = st.slider("Target Durasi Aktif (Hari)", min_value=7, max_value=90, value=30)
+        target_days = st.slider("Target Durasi Aktif / Pelepasan (Hari)", min_value=7, max_value=90, value=30)
     with col2:
-        rigidity_val = st.number_input("Indeks Rigiditas Matriks ($\eta$)", value=4.236, format="%.3f")
+        rigidity_val = st.number_input("Indeks Rigiditas Matriks / Kepadatan Pembawa ($\eta$)", value=4.236, format="%.3f")
         
     st.markdown("")
     if st.button("Hasilkan Kurva Pelepasan"):
         df_release = engine.generate_controlled_release_profile(target_days, rigidity_val)
         
         st.markdown("---")
-        st.subheader(f"📈 Grafik Profil Pelepasan ({pesticide_category}) - {target_days} Hari")
+        st.subheader(f"📈 Grafik Profil Pelepasan ({target_category}) - {target_days} Hari")
         st.line_chart(df_release.set_index("Hari Ke"))
         
         with st.expander("Lihat Tabel Data Detail Akumulasi Pelepasan"):
