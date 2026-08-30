@@ -2,6 +2,37 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
+# --- KONFIGURASI HALAMAN & TEMA ---
+st.set_page_config(
+    page_title="AgroResonance AI - Smart Formulator", 
+    page_icon="🌾", 
+    layout="wide"
+)
+
+# Kustomisasi CSS untuk Tampilan Profesional & Modern
+st.markdown("""
+    <style>
+    .main {
+        background-color: #f8f9fa;
+    }
+    .stButton>button {
+        background-color: #2d6a4f;
+        color: white;
+        border-radius: 6px;
+        font-weight: bold;
+        border: none;
+        padding: 0.5rem 1rem;
+    }
+    .stButton>button:hover {
+        background-color: #1b4332;
+        color: white;
+    }
+    .css-1dp5vir {
+        background-image: linear-gradient(#2d6a4f, #1b4332);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- 1. CORE ENGINE AGRORESONANCE AI ---
 class AgroResonanceEngine:
     def __init__(self):
@@ -33,16 +64,17 @@ class AgroResonanceEngine:
 engine = AgroResonanceEngine()
 
 # --- 2. TAMPILAN ANTARMUKA (FRONTEND DASHBOARD) ---
-st.set_page_config(page_title="AgroResonance AI - Formulator", layout="wide")
+st.sidebar.title("🌿 AgroResonance AI")
+st.sidebar.markdown("*Enterprise R&D Suite*")
+menu = st.sidebar.radio("Pilih Modul Analisis", ["Thermal-Stable Lock Analysis", "Controlled-Release Optimizer"])
 
-st.title("🌾 AgroResonance AI: Smart Pesticide Formulation Suite")
-st.markdown("Platform simulasi R&D berbasis metrik fraktal untuk optimasi kestabilan termal dan profil pelepasan pestisida.")
-
-menu = st.sidebar.selectbox("Pilih Modul Analisis", ["Thermal-Stable Lock Analysis", "Controlled-Release Optimizer"])
+st.sidebar.markdown("---")
+st.sidebar.info("💡 **Tips Klien:** Gunakan modul ini untuk demonstrasi langsung efisiensi formula pestisida di hadapan tim formulator pabrik.")
 
 if menu == "Thermal-Stable Lock Analysis":
-    st.header("🔬 Modul Analisis Kestabilan Termal (Thermal-Stable Lock)")
-    st.write("Evaluasi tingkat ketahanan ikatan molekul pestisida terhadap degradasi suhu dan panas matahari.")
+    st.title("🔬 Thermal-Stable Lock Analysis")
+    st.markdown("Evaluasi tingkat ketahanan ikatan molekul pestisida terhadap degradasi suhu dan panas matahari berbasis metrik fraktal.")
+    st.markdown("---")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -50,38 +82,42 @@ if menu == "Thermal-Stable Lock Analysis":
     with col2:
         phase_b = st.number_input("Nilai Fasa Aditif / Pelarut (B)", value=1.625, format="%.3f")
         
+    st.markdown("")
     if st.button("Jalankan Simulasi Kestabilan"):
         result = engine.evaluate_thermal_stability(phase_a, phase_b)
         
         st.markdown("---")
-        st.subheader("Hasil Laporan Analisis:")
+        st.subheader("📊 Hasil Laporan Analisis Lab:")
         
         m1, m2, m3 = st.columns(3)
         m1.metric(label="Skor Kestabilan Formula", value=f"{result['stability_score']}%")
         m2.metric(label="Deviasi Fasa", value=result['phase_deviation'])
         m3.metric(label="Status Thermal-Stable Lock", value="AKTIF (Stabil)" if result['thermal_stable_lock'] else "TIDAK STABIL")
         
+        st.markdown("")
         if result['thermal_stable_lock']:
-            st.success("✅ Formula optimal! Ikatan molekul tahan terhadap disipasi panas termal.")
+            st.success("✅ **Formula Optimal:** Ikatan molekul terbukti tahan terhadap disipasi panas termal di lapangan.")
         else:
-            st.warning("⚠️ Peringatan: Deviasi fasa terlalu tinggi. Disarankan menyesuaikan komposisi pelarut.")
+            st.warning("⚠️ **Perhatian:** Deviasi fasa melewati batas toleransi. Disarankan menyesuaikan komposisi aditif.")
 
 elif menu == "Controlled-Release Optimizer":
-    st.header("⏳ Modul Pengoptimal Pelepasan Terkendali (Controlled-Release Optimizer)")
-    st.write("Merancang kurva peluruhan dan pelepasan zat aktif pestisida granul di dalam tanah secara presisi.")
+    st.title("⏳ Controlled-Release Optimizer")
+    st.markdown("Simulasi kurva peluruhan dan pelepasan zat aktif pestisida bentuk granul secara presisi di dalam tanah.")
+    st.markdown("---")
     
     col1, col2 = st.columns(2)
     with col1:
         target_days = st.slider("Target Durasi Aktif di Tanah (Hari)", min_value=7, max_value=90, value=30)
     with col2:
-        rigidity_val = st.number_input("Indeks Rigiditas Matriks (η)", value=4.236, format="%.3f")
+        rigidity_val = st.number_input("Indeks Rigiditas Matriks ($\eta$)", value=4.236, format="%.3f")
         
+    st.markdown("")
     if st.button("Hasilkan Kurva Pelepasan"):
         df_release = engine.generate_controlled_release_profile(target_days, rigidity_val)
         
         st.markdown("---")
-        st.subheader(f"Grafik Profil Pelepasan Pestisida ({target_days} Hari)")
+        st.subheader(f"📈 Grafik Profil Pelepasan Pestisida ({target_days} Hari)")
         st.line_chart(df_release.set_index("Hari Ke"))
         
-        st.subheader("Tabel Data Akumulasi Pelepasan")
-        st.dataframe(df_release)
+        with st.expander("Lihat Tabel Data Detail Akumulasi Pelepasan"):
+            st.dataframe(df_release, use_container_width=True)
