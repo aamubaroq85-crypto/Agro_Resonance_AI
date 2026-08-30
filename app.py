@@ -179,3 +179,50 @@ elif menu == "Controlled-Release Optimizer":
             file_name=f"Release_Profile_{target_days}Hari.csv",
             mime="text/csv",
         )
+import streamlit as st
+
+# Judul Aplikasi
+st.title("AgroResonance AI")
+st.subheader("Advanced Thermal-Stable Formulator")
+
+st.markdown("---")
+
+# Bagian Input Pengguna
+st.write("### 1. Masukkan Parameter Fasa & Target Volume")
+fasa_a = st.number_input("Nilai Fasa A (Bahan Utama)", value=1.618, format="%.3f")
+fasa_b = st.number_input("Nilai Fasa B (Aditif / Emulsifier)", value=1.620, format="%.3f")
+
+vol_total = st.number_input("Target Volume Total Larutan (ml)", value=1000.0, step=100.0)
+kelas_konsentrasi = st.selectbox("Pilih Kelas Konsentrasi", ["Standar (18 g/l)", "Tinggi (32 g/l)"])
+
+# Tombol Eksekusi Analisis
+if st.button("ANALISIS KESTABILAN FASA"):
+    # Hitung Deviasi Fasa
+    deviasi = abs(fasa_a - fasa_b)
+    
+    st.markdown("---")
+    st.subheader("📋 Hasil Analisis & Panduan Takaran Riil")
+    
+    # Validasi Batas Stabilitas (0.05)
+    if deviasi <= 0.05:
+        st.success(f"STATUS: AKTIF (Thermal-Stable Lock Stabil | Deviasi: {deviasi:.3f})")
+        
+        # Perhitungan Otomatis Berdasarkan Kelas Konsentrasi
+        if "18" in kelas_konsentrasi:
+            vol_ba = vol_total * (18 / 1000)
+        else:
+            vol_ba = vol_total * (32 / 1000)
+            
+        vol_aditif = vol_total * 0.035  # Porsi emulsifier 3.5%
+        vol_pelarut = vol_total - (vol_ba + vol_aditif)  # Sisa pelarut
+        
+        # Tampilan Kotak Metrik Takaran
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Bahan Utama (BA)", f"{vol_ba:.1f} ml")
+        col2.metric("Aditif / Emulsifier", f"{vol_aditif:.1f} ml")
+        col3.metric("Pelarut Organik", f"{vol_pelarut:.1f} ml")
+        
+        st.info("💡 **Instruksi Pencampuran:** Campurkan aditif ke pelarut, masukkan bahan utama perlahan, aduk rata hingga volume tercapai.")
+        
+    else:
+        st.error(f"STATUS: TIDAK STABIL (Deviasi {deviasi:.3f} melewati batas 0.05). Sesuaikan kembali Fasa B!")
