@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+import datetime
 
 # --- KONFIGURASI HALAMAN & TEMA ---
 st.set_page_config(
@@ -36,15 +37,27 @@ class AgroResonanceEngine:
         self.phi = (1 + np.sqrt(5)) / 2
         self.attenuation_factor = self.phi ** -2  # ~0.381966
 
-    def evaluate_thermal_stability(self, phase_angle_a, phase_angle_b):
+    def evaluate_thermal_stability(self, category, phase_angle_a, phase_angle_b):
         phase_difference = np.abs(phase_angle_a - phase_angle_b)
         stability_score = max(0.0, 100.0 - (phase_difference * 150.0))
         is_stable_lock = True if phase_difference < 0.05 else False
         
+        # Membuat DataFrame ringkasan hasil untuk diunduh
+        result_df = pd.DataFrame([{
+            "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Kategori_Produk": category,
+            "Fasa_A": phase_angle_a,
+            "Fasa_B": phase_angle_b,
+            "Deviasi_Fasa": round(phase_difference, 4),
+            "Skor_Kestabilan_Persen": round(stability_score, 2),
+            "Status_Thermal_Lock": "AKTIF (Stabil)" if is_stable_lock else "TIDAK STABIL"
+        }])
+
         return {
             "stability_score": round(stability_score, 2),
             "thermal_stable_lock": is_stable_lock,
-            "phase_deviation": round(phase_difference, 4)
+            "phase_deviation": round(phase_difference, 4),
+            "df_summary": result_df
         }
 
     def generate_controlled_release_profile(self, target_days, initial_rigidity):
@@ -66,7 +79,7 @@ st.sidebar.markdown("*Advanced Agro-Formulation Suite*")
 menu = st.sidebar.radio("Pilih Modul Analisis", ["Thermal-Stable Lock Analysis", "Controlled-Release Optimizer"])
 
 st.sidebar.markdown("---")
-st.sidebar.info("💡 **Info R&D:** Mendukung formulasi pestisida lengkap (Insektisida, Fungisida, Akarisida, Herbisida) serta varian nutrisi (POC, Tepung, Trace Elements).")
+st.sidebar.info("💡 **Info R&D:** Dilengkapi fitur unduh laporan lab otomatis untuk dokumentasi lapangan dan riset formula.")
 
 if menu == "Thermal-Stable Lock Analysis":
     st.title("🔬 Thermal-Stable Lock Analysis")
@@ -99,7 +112,7 @@ if menu == "Thermal-Stable Lock Analysis":
         
     st.markdown("")
     if st.button("Jalankan Simulasi Kestabilan"):
-        result = engine.evaluate_thermal_stability(phase_a, phase_b)
+        result = engine.evaluate_thermal_stability(formulation_type, phase_a, phase_b)
         
         st.markdown("---")
         st.subheader(f"📊 Hasil Analisis Lab: {formulation_type}")
@@ -114,6 +127,16 @@ if menu == "Thermal-Stable Lock Analysis":
             st.success("✅ **Formula Optimal:** Ikatan molekul/nutrisi tahan terhadap disipasi panas termal di lapangan.")
         else:
             st.warning("⚠️ **Perhatian:** Deviasi fasa melewati batas toleransi. Disarankan menyesuaikan komposisi aditif atau chelating agent.")
+            
+        # Tombol Unduh Laporan Kestabilan (CSV)
+        st.markdown("---")
+        csv_data = result['df_summary'].to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Unduh Laporan Ringkasan Lab (CSV)",
+            data=csv_data,
+            file_name=f"Thermal_Stability_{formulation_type.split()[0]}.csv",
+            mime="text/csv",
+        )
 
 elif menu == "Controlled-Release Optimizer":
     st.title("⏳ Controlled-Release Optimizer")
@@ -146,3 +169,13 @@ elif menu == "Controlled-Release Optimizer":
         
         with st.expander("Lihat Tabel Data Detail Akumulasi Pelepasan"):
             st.dataframe(df_release, use_container_width=True)
+            
+        # Tombol Unduh Kurva Pelepasan (CSV)
+        st.markdown("---")
+        csv_release = df_release.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Unduh Data Kurva Pelepasan (CSV)",
+            data=csv_release,
+            file_name=f"Release_Profile_{target_days}Hari.csv",
+            mime="text/csv",
+        )
