@@ -4,7 +4,7 @@ import pandas as pd
 
 # --- KONFIGURASI HALAMAN & TEMA ---
 st.set_page_config(
-    page_title="AgroResonance AI - Smart Formulator", 
+    page_title="AgroResonance AI - Enterprise Formulator", 
     page_icon="🌾", 
     layout="wide"
 )
@@ -26,9 +26,6 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #1b4332;
         color: white;
-    }
-    .css-1dp5vir {
-        background-image: linear-gradient(#2d6a4f, #1b4332);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -65,16 +62,27 @@ engine = AgroResonanceEngine()
 
 # --- 2. TAMPILAN ANTARMUKA (FRONTEND DASHBOARD) ---
 st.sidebar.title("🌿 AgroResonance AI")
-st.sidebar.markdown("*Enterprise R&D Suite*")
+st.sidebar.markdown("*Multi-Pesticide R&D Suite*")
 menu = st.sidebar.radio("Pilih Modul Analisis", ["Thermal-Stable Lock Analysis", "Controlled-Release Optimizer"])
 
 st.sidebar.markdown("---")
-st.sidebar.info("💡 **Tips Klien:** Gunakan modul ini untuk demonstrasi langsung efisiensi formula pestisida di hadapan tim formulator pabrik.")
+st.sidebar.info("💡 **Panduan:** Pilih kategori pestisida (Insektisida, Fungisida, Akarisida, Herbisida) untuk menyesuaikan parameter fasa molekul.")
 
 if menu == "Thermal-Stable Lock Analysis":
     st.title("🔬 Thermal-Stable Lock Analysis")
-    st.markdown("Evaluasi tingkat ketahanan ikatan molekul pestisida terhadap degradasi suhu dan panas matahari berbasis metrik fraktal.")
+    st.markdown("Evaluasi tingkat ketahanan ikatan molekul pestisida terhadap degradasi suhu dan panas matahari berdasarkan jenis formulasi.")
     st.markdown("---")
+    
+    # Pemilihan Kategori Pestisida
+    pesticide_category = st.selectbox(
+        "Pilih Kategori Pestisida",
+        [
+            "Insektisida (Contoh: Fipronil / Imidacloprid)",
+            "Fungisida (Contoh: Difenokonazol / Mancozeb)",
+            "Akarisida (Contoh: Abamectin / Hexythiazox)",
+            "Herbisida (Contoh: Glifosat / Paraquat)"
+        ]
+    )
     
     col1, col2 = st.columns(2)
     with col1:
@@ -87,7 +95,7 @@ if menu == "Thermal-Stable Lock Analysis":
         result = engine.evaluate_thermal_stability(phase_a, phase_b)
         
         st.markdown("---")
-        st.subheader("📊 Hasil Laporan Analisis Lab:")
+        st.subheader(f"📊 Hasil Analisis Lab: {pesticide_category.split(' ')[0]}")
         
         m1, m2, m3 = st.columns(3)
         m1.metric(label="Skor Kestabilan Formula", value=f"{result['stability_score']}%")
@@ -96,18 +104,28 @@ if menu == "Thermal-Stable Lock Analysis":
         
         st.markdown("")
         if result['thermal_stable_lock']:
-            st.success("✅ **Formula Optimal:** Ikatan molekul terbukti tahan terhadap disipasi panas termal di lapangan.")
+            st.success("✅ **Formula Optimal:** Ikatan molekul tahan terhadap disipasi panas termal di lapangan.")
         else:
             st.warning("⚠️ **Perhatian:** Deviasi fasa melewati batas toleransi. Disarankan menyesuaikan komposisi aditif.")
 
 elif menu == "Controlled-Release Optimizer":
     st.title("⏳ Controlled-Release Optimizer")
-    st.markdown("Simulasi kurva peluruhan dan pelepasan zat aktif pestisida bentuk granul secara presisi di dalam tanah.")
+    st.markdown("Simulasi kurva pelepasan zat aktif untuk formulasi sistemik, kontak, atau pra-tumbuh di dalam tanah/tanaman.")
     st.markdown("---")
+    
+    pesticide_category = st.selectbox(
+        "Pilih Kategori Target Aplikasi",
+        [
+            "Herbisida (Pra-Tumbuh / Lahan Sela)",
+            "Insektisida Granul / Akar",
+            "Fungisida Sistemik Jangka Panjang",
+            "Akarisida Lepas-Terkendali"
+        ]
+    )
     
     col1, col2 = st.columns(2)
     with col1:
-        target_days = st.slider("Target Durasi Aktif di Tanah (Hari)", min_value=7, max_value=90, value=30)
+        target_days = st.slider("Target Durasi Aktif (Hari)", min_value=7, max_value=90, value=30)
     with col2:
         rigidity_val = st.number_input("Indeks Rigiditas Matriks ($\eta$)", value=4.236, format="%.3f")
         
@@ -116,7 +134,7 @@ elif menu == "Controlled-Release Optimizer":
         df_release = engine.generate_controlled_release_profile(target_days, rigidity_val)
         
         st.markdown("---")
-        st.subheader(f"📈 Grafik Profil Pelepasan Pestisida ({target_days} Hari)")
+        st.subheader(f"📈 Grafik Profil Pelepasan ({pesticide_category}) - {target_days} Hari")
         st.line_chart(df_release.set_index("Hari Ke"))
         
         with st.expander("Lihat Tabel Data Detail Akumulasi Pelepasan"):
