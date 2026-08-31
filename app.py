@@ -79,11 +79,11 @@ st.sidebar.markdown("*Advanced Agro-Formulation Suite*")
 menu = st.sidebar.radio("Pilih Modul Analisis", ["Thermal-Stable Lock Analysis", "Controlled-Release Optimizer"])
 
 st.sidebar.markdown("---")
-st.sidebar.info("💡 **Info R&D:** Dilengkapi fitur unduh laporan lab otomatis untuk dokumentasi lapangan dan riset formula.")
+st.sidebar.info("💡 **Info R&D:** Dilengkapi fitur kalkulator takaran riil dan unduh laporan lab otomatis untuk dokumentasi lapangan.")
 
 if menu == "Thermal-Stable Lock Analysis":
     st.title("🔬 Thermal-Stable Lock Analysis")
-    st.markdown("Evaluasi tingkat ketahanan ikatan molekul pestisida dan kompleks nutrisi terhadap degradasi suhu dan panas matahari.")
+    st.markdown("Evaluasi tingkat ketahanan ikatan molekul pestisida dan kompleks nutrisi terhadap degradasi suhu dan panas matahari, lengkap dengan panduan takaran riil.")
     st.markdown("---")
     
     # Pemilihan Kategori Luas (Pestisida & Nutrisi)
@@ -104,14 +104,16 @@ if menu == "Thermal-Stable Lock Analysis":
         ]
     )
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
-        phase_a = st.number_input("Nilai Fasa Bahan Utama / Unsur (A)", value=1.618, format="%.3f")
+        phase_a = st.number_input("Nilai Fasa Bahan Utama (A)", value=1.618, format="%.3f")
     with col2:
-        phase_b = st.number_input("Nilai Fasa Aditif / Carrier / Pelarut (B)", value=1.625, format="%.3f")
+        phase_b = st.number_input("Nilai Fasa Aditif / Pelarut (B)", value=1.620, format="%.3f")
+    with col3:
+        vol_total = st.number_input("Target Volume Total (ml)", value=1000.0, step=100.0)
         
     st.markdown("")
-    if st.button("Jalankan Simulasi Kestabilan"):
+    if st.button("Jalankan Simulasi Kestabilan & Hitung Takaran"):
         result = engine.evaluate_thermal_stability(formulation_type, phase_a, phase_b)
         
         st.markdown("---")
@@ -122,11 +124,31 @@ if menu == "Thermal-Stable Lock Analysis":
         m2.metric(label="Deviasi Fasa", value=result['phase_deviation'])
         m3.metric(label="Status Thermal-Stable Lock", value="AKTIF (Stabil)" if result['thermal_stable_lock'] else "TIDAK STABIL")
         
-        st.markdown("")
-        if result['thermal_stable_lock']:
-            st.success("✅ **Formula Optimal:** Ikatan molekul/nutrisi tahan terhadap disipasi panas termal di lapangan.")
+        # --- PERHITUNGAN TAKARAN RIIL OTOMATIS ---
+        if "Insektisida" in formulation_type or "Fungisida" in formulation_type:
+            vol_ba = vol_total * (32 / 1000)  # Mengikuti kelas pekat 32 g/l
         else:
-            st.warning("⚠️ **Perhatian:** Deviasi fasa melewati batas toleransi. Disarankan menyesuaikan komposisi aditif atau chelating agent.")
+            vol_ba = vol_total * (18 / 1000)  # Standar 18 g/l
+            
+        vol_aditif = vol_total * 0.035  # Porsi aditif / emulsifier 3.5%
+        vol_pelarut = vol_total - (vol_ba + vol_aditif)  # Sisa pelarut
+        
+        st.markdown("---")
+        st.subheader(f"📋 Panduan Takaran Riil (Untuk {vol_total:,.1f} ml)")
+        
+        deviasi = result['phase_deviation']
+        
+        if result['thermal_stable_lock']:
+            st.success(f"STATUS: AKTIF (Thermal-Stable Lock Stabil | Deviasi: {deviasi:.3f})")
+            
+            t1, t2, t3 = st.columns(3)
+            t1.metric("Bahan Utama (BA)", f"{vol_ba:.1f} ml")
+            t2.metric("Aditif / Emulsifier", f"{vol_aditif:.1f} ml")
+            t3.metric("Pelarut Organik", f"{vol_pelarut:.1f} ml")
+            
+            st.info("💡 **Instruksi Pencampuran:** Campurkan aditif ke pelarut, masukkan bahan utama perlahan, aduk rata hingga volume tercapai.")
+        else:
+            st.error(f"STATUS: TIDAK STABIL (Deviasi {deviasi:.3f} melewati batas toleransi 0.05). Sesuaikan kembali Fasa B!")
             
         # Tombol Unduh Laporan Kestabilan (CSV)
         st.markdown("---")
@@ -179,50 +201,3 @@ elif menu == "Controlled-Release Optimizer":
             file_name=f"Release_Profile_{target_days}Hari.csv",
             mime="text/csv",
         )
-import streamlit as st
-
-# Judul Aplikasi
-st.title("AgroResonance AI")
-st.subheader("Advanced Thermal-Stable Formulator")
-
-st.markdown("---")
-
-# Bagian Input Pengguna
-st.write("### 1. Masukkan Parameter Fasa & Target Volume")
-fasa_a = st.number_input("Nilai Fasa A (Bahan Utama)", value=1.618, format="%.3f")
-fasa_b = st.number_input("Nilai Fasa B (Aditif / Emulsifier)", value=1.620, format="%.3f")
-
-vol_total = st.number_input("Target Volume Total Larutan (ml)", value=1000.0, step=100.0)
-kelas_konsentrasi = st.selectbox("Pilih Kelas Konsentrasi", ["Standar (18 g/l)", "Tinggi (32 g/l)"])
-
-# Tombol Eksekusi Analisis
-if st.button("ANALISIS KESTABILAN FASA"):
-    # Hitung Deviasi Fasa
-    deviasi = abs(fasa_a - fasa_b)
-    
-    st.markdown("---")
-    st.subheader("📋 Hasil Analisis & Panduan Takaran Riil")
-    
-    # Validasi Batas Stabilitas (0.05)
-    if deviasi <= 0.05:
-        st.success(f"STATUS: AKTIF (Thermal-Stable Lock Stabil | Deviasi: {deviasi:.3f})")
-        
-        # Perhitungan Otomatis Berdasarkan Kelas Konsentrasi
-        if "18" in kelas_konsentrasi:
-            vol_ba = vol_total * (18 / 1000)
-        else:
-            vol_ba = vol_total * (32 / 1000)
-            
-        vol_aditif = vol_total * 0.035  # Porsi emulsifier 3.5%
-        vol_pelarut = vol_total - (vol_ba + vol_aditif)  # Sisa pelarut
-        
-        # Tampilan Kotak Metrik Takaran
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Bahan Utama (BA)", f"{vol_ba:.1f} ml")
-        col2.metric("Aditif / Emulsifier", f"{vol_aditif:.1f} ml")
-        col3.metric("Pelarut Organik", f"{vol_pelarut:.1f} ml")
-        
-        st.info("💡 **Instruksi Pencampuran:** Campurkan aditif ke pelarut, masukkan bahan utama perlahan, aduk rata hingga volume tercapai.")
-        
-    else:
-        st.error(f"STATUS: TIDAK STABIL (Deviasi {deviasi:.3f} melewati batas 0.05). Sesuaikan kembali Fasa B!")
