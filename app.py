@@ -13,6 +13,8 @@ class NexusStreamCoreLightweight:
             st.session_state.lattice_grid = [[0.0 * vector_dim] for _ in range(capacity)]
             st.session_state.cursor = 0
             st.session_state.total_stored = 0
+            # Menyimpan riwayat metrik untuk grafik
+            st.session_state.history_distance = []
 
     def fast_ingest(self, data_vector):
         if len(data_vector) != self.vector_dim:
@@ -35,6 +37,12 @@ class NexusStreamCoreLightweight:
             dist = math.sqrt(dist_sq)
             if dist < min_dist:
                 min_dist = dist
+        
+        # Simpan ke riwayat untuk visualisasi grafik
+        st.session_state.history_distance.append({
+            "waktu": datetime.datetime.now().strftime("%H:%M:%S"),
+            "jarak_min": min_dist
+        })
         return min_dist, limit
 
 # Inisialisasi Engine
@@ -58,13 +66,21 @@ st.markdown("""
 
 # --- ANTARMUKA UTAMA APLIKASI ---
 st.title("🌾 AgroResonance AI & Thermal-Stable Lock Analysis")
-st.markdown("Evaluasi tingkat ketahanan ikatan molekul pestisida dan kompleks nutrisi terhadap degradasi suhu, lengkap dengan analitik core berkecepatan tinggi.")
+st.markdown("Evaluasi tingkat ketahanan ikatan molekul pestisida dan kompleks nutrisi terhadap degradasi suhu, lengkap dengan metrik analitik dan grafik interaktif.")
 
-# Sidebar atau Layout Utama
+# --- METRIK UTAMA ATAS ---
+m1, m2, m3 = st.columns(3)
+m1.metric(label="Total Vektor Tersimpan", value=f"{st.session_state.get('total_stored', 0)} Record")
+m2.metric(label="Dimensi Matriks Core", value="64 Dimensi")
+m3.metric(label="Status Mesin", value="Online / Siap")
+
+st.markdown("---")
+
+# Layout Kontrol Utama
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Pengaturan Fasa Parameter")
+    st.subheader("⚙️ Pengaturan Fasa Parameter")
     val_a = st.number_input("Nilai Fasa Bahan Utama (A)", value=1.618, format="%.4f")
     val_b = st.number_input("Nilai Fasa Aditif / Pelarut (B)", value=0.618, format="%.4f")
     
@@ -72,17 +88,28 @@ with col1:
         mock_vector = [val_a, val_b] * 32
         success = engine.fast_ingest(mock_vector)
         if success:
-            st.success(f"Berhasil memasukkan data vektor 64-dimensi! Total record: {st.session_state.total_stored}")
+            st.success(f"Berhasil memasukkan data vektor! Total record: {st.session_state.total_stored}")
 
 with col2:
-    st.subheader("Analisis Kemiripan Vektor")
-    if st.button("Jalankan Instant Query"):
+    st.subheader("🔍 Analisis Kemiripan Vektor")
+    if st.button("Jalankan Instant Query & Rekam Metrik"):
         mock_query = [val_a, val_b] * 32
         min_dist, total = engine.instant_query(mock_query)
         if total > 0:
-            st.info(f"Hasil Analisis:\n- Jarak Minimum (Distance): **{min_dist:.4f}**\n- Total Data Tersimpan: **{total}**")
+            st.info(f"Hasil Analisis Terakhir:\n- Jarak Minimum (Distance): **{min_dist:.4f}**")
         else:
             st.warning("Belum ada data di dalam memori core. Silakan simpan data terlebih dahulu.")
+
+# --- VISUALISASI GRAFIK ANALITIK ---
+st.markdown("---")
+st.subheader("📈 Grafik Tren Jarak Analitik (Real-Time History)")
+
+if len(st.session_state.get('history_distance', [])) > 0:
+    df_history = pd.DataFrame(st.session_state.history_distance)
+    # Menampilkan grafik garis interaktif
+    st.line_chart(df_history.set_index('waktu')['jarak_min'])
+else:
+    st.info("Belum ada riwayat kueri. Jalankan 'Instant Query' untuk memunculkan grafik tren analitik.")
 
 st.markdown("---")
 st.caption("Nexus Stream Core Engine - Integrated with Streamlit Cloud")
